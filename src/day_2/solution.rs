@@ -10,6 +10,23 @@ const SHORT_INPUT: &str = "7 6 4 2 1
 const PUZZLE_INPUT: &str = include_str!("input.txt");
 
 #[allow(dead_code)]
+const PART_TWO_EDGE_CASES: &str = "48 46 47 49 51 54 56
+1 1 2 3 4 5
+1 2 3 4 5 5
+5 1 2 3 4 5
+1 4 3 2 1
+1 6 7 8 9
+1 2 3 4 3
+9 8 7 6 7
+7 10 8 10 11
+29 28 27 25 26 25 22 20
+1 1 1 1
+8 9 10 11
+1 2 3 4 5 5
+17 11 9 9 7";
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, PartialEq)]
 enum Change {
     Increase,
     Decrease,
@@ -75,6 +92,55 @@ fn part_one(input: &str) -> u32 {
     })
 }
 
+#[allow(dead_code)]
+fn part_two(input: &str) -> u32 {
+    input
+        .lines()
+        .filter(|line| {
+            let levels: Vec<u32> = line
+                .split_whitespace()
+                .map(|l| l.parse().unwrap())
+                .collect();
+
+            is_safe(&levels)
+                || (levels.len() > 1
+                    && (0..levels.len()).any(|i| is_safe(&remove_level(&levels, i))))
+        })
+        .count() as u32
+}
+
+fn is_safe(levels: &[u32]) -> bool {
+    let mut change = None;
+    let mut previous_level = None;
+
+    levels.windows(2).all(|window| {
+        let (prev, current) = (window[0], window[1]);
+
+        if (1..=3).contains(&(current.abs_diff(prev))) {
+            let is_increasing = current > prev;
+
+            if change == Some(!is_increasing) {
+                return false;
+            }
+
+            change = Some(is_increasing);
+            previous_level = Some(current);
+
+            true
+        } else {
+            false
+        }
+    })
+}
+
+fn remove_level(levels: &[u32], index: usize) -> Vec<u32> {
+    let mut new_levels = levels.to_vec();
+
+    new_levels.remove(index);
+
+    new_levels
+}
+
 #[cfg(test)]
 mod tests {
     use crate::day_2::solution::*;
@@ -87,5 +153,20 @@ mod tests {
     #[test]
     fn part_one_puzzle_input() {
         assert_eq!(part_one(PUZZLE_INPUT), 510);
+    }
+
+    #[test]
+    fn part_two_short_input() {
+        assert_eq!(part_two(SHORT_INPUT), 4);
+    }
+
+    #[test]
+    fn part_two_puzzle_input() {
+        assert_eq!(part_two(PUZZLE_INPUT), 553);
+    }
+
+    #[test]
+    fn part_two_edge_cases() {
+        assert_eq!(part_two(PART_TWO_EDGE_CASES), 12);
     }
 }
